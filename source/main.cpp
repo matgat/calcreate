@@ -19,7 +19,7 @@
 import utilities.string; // str::to_int
 import utilities.system; // sys::*
 
-using namespace std::literals; // Use "..."s
+using namespace std::literals; // "std::string literal"s
 //using namespace std::chrono_literals; // 1d
 
 
@@ -76,8 +76,9 @@ class Arguments
                     case STS::GET_START :
                        {
                         // Unfortunately 'parse' needs a stream, and it can't be constructed with a 'string_view'
-                        //const std::string instr(arg);
-                        std::istringstream iss(std::string(arg));
+                        const std::string sarg(arg);
+                        std::istringstream iss(sarg);
+                        //                            Notice that ↓, should be a ""sv
                         if( !(iss >> std::chrono::parse("%Y-%m-%d"s, i_startdate)) ) // Expecting something like "2022-05-16"
                            {
                             throw std::runtime_error(std::format("\"{}\" is not a valid date",arg));
@@ -100,11 +101,11 @@ class Arguments
 
     static void print_usage() noexcept
        {
-        std::cerr << "\nUsage:\n";
-        std::cerr << "   calcreate -start 2022-05-16 -weeks 30\n";
-        std::cerr << "       -start <date>: Sets starting day\n";
-        std::cerr << "       -weeks <n>: Set how many weeks to generate\n";
-        std::cerr << "       -verbose: Log more info\n";
+        std::cerr << "\nUsage:\n"
+                     "   calcreate -start 2022-05-16 -weeks 30\n"
+                     "       -start <date>: Sets starting day\n"
+                     "       -weeks <n>: Set how many weeks to generate\n"
+                     "       -verbose: Log more info\n";
        }
 
     const auto& start_date() const noexcept { return i_startdate; }
@@ -117,7 +118,6 @@ class Arguments
     bool i_verbose = false;
     //fs::path i_output = ".";
 };
-
 
 
 
@@ -157,25 +157,12 @@ int main( int argc, const char* argv[] )
             else
                {
                 sout << '[' << std::format("{:%Y-%m-%d}", curr_days);
-                switch( weekday )
-                   {
-                    case std::chrono::Monday : sout << " mon]\n";   break;
-                    case std::chrono::Friday : sout <<     "]\n\n"; break;
-                    default:                   sout <<     "]\n";
-                   }
-                //if( weekday==std::chrono::Monday )
-                //   {
-                //    sout << " mon]\n";
-                //   }
-                //else if( weekday==std::chrono::Friday )
-                //   {
-                //    sout << "]\n\n";
-                //   }
-                //else
-                //   {
-                //    sout << "]\n";
-                //   }
-                ++curr_days; //curr_days += std::chrono::days{1};
+
+                     if( weekday==std::chrono::Monday ) sout << " mon" "]\n";
+                else if( weekday==std::chrono::Friday ) sout <<        "]\n" "\n";
+                else                                    sout <<        "]\n";
+
+                ++curr_days; // curr_days += std::chrono::days{1};
                }
            }
 
