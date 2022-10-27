@@ -27,12 +27,9 @@ using namespace std::literals; // "std::string literal"s
 class Arguments
 {
  public:
-    Arguments(int argc, const char* argv[])
+    Arguments( int argc, const char* argv[] )
+       : i_startdate(std::chrono::floor<std::chrono::days>(std::chrono::time_point<std::chrono::system_clock>{std::chrono::system_clock::now()}))
        {
-        // Default start date
-        const std::chrono::time_point<std::chrono::system_clock> today{std::chrono::system_clock::now()};
-        i_startdate = std::chrono::floor<std::chrono::days>(today);
-
         //std::vector<std::string> args(argv+1, argv+argc); for( std::string& arg : args )
         try{
             enum class STS
@@ -44,21 +41,18 @@ class Arguments
 
             for( int i=1; i<argc; ++i )
                {
-                const std::string_view arg{ argv[i] };
+                std::string_view arg{ argv[i] };
                 switch( status )
                    {
                     case STS::SEE_ARG :
-                        if( arg[0] == '-' )
+                        if( arg.size()>=2 && arg[0]=='-' )
                            {// A command switch!
-                            if( arg=="-verbose"sv )
-                               {
-                                i_verbose = true;
-                               }
-                            else if( arg=="-start"sv )
+                            arg.remove_prefix(arg[1]=='-' ? 2 : 1); // Skip hyphen(s)
+                            if( arg=="start"sv )
                                {
                                 status = STS::GET_START; // Date expected
                                }
-                            else if( arg=="-weeks"sv )
+                            else if( arg=="weeks"sv )
                                {
                                 status = STS::GET_WEEKS; // Integer expected
                                }
@@ -104,19 +98,15 @@ class Arguments
         std::cerr << "\nUsage:\n"
                      "   calcreate -start 2022-05-16 -weeks 30\n"
                      "       -start <date>: Sets starting day\n"
-                     "       -weeks <n>: Set how many weeks to generate\n"
-                     "       -verbose: Log more info\n";
+                     "       -weeks <n>: Set how many weeks to generate\n";
        }
 
     const auto& start_date() const noexcept { return i_startdate; }
     int weeks() const noexcept { return i_nweeks; }
-    bool verbose() const noexcept { return i_verbose; }
 
  private:
     std::chrono::year_month_day i_startdate;
     int i_nweeks = 4;
-    bool i_verbose = false;
-    //fs::path i_output = ".";
 };
 
 
@@ -128,13 +118,6 @@ int main( int argc, const char* argv[] )
 
     try{
         Arguments args(argc, argv);
-
-        if( args.verbose() )
-           {
-            std::cout << "**** calcreate (" << __DATE__ << ") ****\n"; // sys::human_readable_time_stamp()
-            //std::cout << "Running in: " << fs::current_path().string() << '\n';
-            std::cout << args.weeks() << "   weeks from " << args.start_date() << '\n' << '\n';
-           }
 
         std::ostringstream sout;
         std::chrono::sys_days curr_days(args.start_date());
