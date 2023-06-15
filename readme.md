@@ -10,13 +10,15 @@ as prerequisite.
 
 To see the available command line arguments:
 ```
-$ calcreate
+$ .\calcreate
 ```
 
 Create calendar log entries:
 ```
-$ calcreate -start 2022-05-16 -weeks 30
+$ .\calcreate -start 2022-05-16 -weeks 30
 ```
+Then paste the clipboard content
+
 
 ## Build
 ```
