@@ -23,5 +23,5 @@ Then paste the clipboard content
 ## Build
 ```
 $ git clone https://github.com/matgat/calcreate.git
-> msbuild msvc/calcreate.vcxproj -t:calcreate -p:Configuration=Release|x64
+> msbuild msvc/calcreate.vcxproj -t:Rebuild -p:Configuration=Release -p:Platform=x64
 ```
