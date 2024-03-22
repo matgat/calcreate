@@ -17,7 +17,7 @@ module;
 #include <string_view>
 #include <cstring> // std::memcpy
 
-export module utilities.system;
+export module utilities.clipboard;
 
 
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

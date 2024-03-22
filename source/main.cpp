@@ -1,131 +1,25 @@
-/*  ---------------------------------------------
-    calcreate
-    ©2022 matteo.gattanini@gmail.com
+//import std;
+#include <format>
+#include <print>
+#include <chrono>
+#include <stdexcept>
 
-    OVERVIEW
-    ---------------------------------------------
-    Utility to create calendar entries for my
-    manual log files
+import app.arguments; // app::Arguments
+import utilities.clipboard; // sys::Clipboard
 
-    DEPENDENCIES:
-    --------------------------------------------- */
-#include <iostream>
-#include <sstream> // std::istringstream
-#include <string>
-#include <string_view>
-#include <format> // std::format
-#include <chrono> // std::chrono::*
-#include <stdexcept> // std::runtime_error
-import utilities.string; // str::to_int
-import utilities.system; // sys::*
-
-using namespace std::literals; // "std::string literal"s
-//using namespace std::chrono_literals; // 1d
-
-
-/////////////////////////////////////////////////////////////////////////////
-class Arguments
-{
- public:
-    Arguments( int argc, const char* argv[] )
-       : i_startdate(std::chrono::floor<std::chrono::days>(std::chrono::time_point<std::chrono::system_clock>{std::chrono::system_clock::now()}))
-       {
-        //std::vector<std::string> args(argv+1, argv+argc); for( std::string& arg : args )
-        try{
-            enum class STS
-               {
-                SEE_ARG,
-                GET_START,
-                GET_WEEKS
-               } status = STS::SEE_ARG;
-
-            for( int i=1; i<argc; ++i )
-               {
-                std::string_view arg{ argv[i] };
-                switch( status )
-                   {
-                    case STS::SEE_ARG :
-                        if( arg.size()>=2 && arg[0]=='-' )
-                           {// A command switch!
-                            arg.remove_prefix(arg[1]=='-' ? 2 : 1); // Skip hyphen(s)
-                            if( arg=="start"sv )
-                               {
-                                status = STS::GET_START; // Date expected
-                               }
-                            else if( arg=="weeks"sv )
-                               {
-                                status = STS::GET_WEEKS; // Integer expected
-                               }
-                            else
-                               {
-                                throw std::invalid_argument(std::format("Unknown switch: {}",arg));
-                               }
-                           }
-                        else
-                           {
-                            throw std::invalid_argument(std::format("Don't know how to use: {}",arg));
-                           }
-                        break;
-
-                    case STS::GET_START :
-                       {
-                        // Unfortunately 'parse' needs a stream, and it can't be constructed with a 'string_view'
-                        const std::string sarg(arg);
-                        std::istringstream iss(sarg);
-                        //                            Notice that ↓, should be a ""sv
-                        if( !(iss >> std::chrono::parse("%Y-%m-%d"s, i_startdate)) ) // Expecting something like "2022-05-16"
-                           {
-                            throw std::runtime_error(std::format("\"{}\" is not a valid date",arg));
-                           }
-                        status = STS::SEE_ARG;
-                       } break;
-
-                    case STS::GET_WEEKS :
-                        i_nweeks = str::to_int(arg); // Expecting an integer
-                        status = STS::SEE_ARG;
-                        break;
-                   }
-               } // each argument
-           }
-        catch( std::exception& e)
-           {
-            throw std::invalid_argument(e.what());
-           }
-       }
-
-    static void print_usage() noexcept
-       {
-        std::cerr << "\nUsage:\n"
-                     "   calcreate -start 2022-05-16 -weeks 30\n"
-                     "       -start <date>: Sets starting day\n"
-                     "       -weeks <n>: Set how many weeks to generate\n";
-       }
-
-    const auto& start_date() const noexcept { return i_startdate; }
-    int weeks() const noexcept { return i_nweeks; }
-
- private:
-    std::chrono::year_month_day i_startdate;
-    int i_nweeks = 4;
-};
-
-
+#define DATEFMT "%Y-%m-%d"
 
 //---------------------------------------------------------------------------
 int main( int argc, const char* argv[] )
 {
-    std::ios_base::sync_with_stdio(false);
-
     try{
-        Arguments args(argc, argv);
+        app::Arguments args(argc, argv, DATEFMT);
 
         std::ostringstream sout;
         std::chrono::sys_days curr_days(args.start_date());
-        //std::chrono::time_point<std::chrono::system_clock, std::chrono::days> curr_days(args.start_date());
         int remaining_weeks = args.weeks();
         while( remaining_weeks>0 )
            {
-            //std::cout << "  " << std::format("{:%Y-%m-%d}", curr_days) << "  " << std::format("{:%A}", std::chrono::weekday{curr_days}) << '\n';
             const std::chrono::weekday weekday{curr_days};
             if( weekday==std::chrono::Sunday )
                {
@@ -139,18 +33,18 @@ int main( int argc, const char* argv[] )
                }
             else
                {
-                sout << '[' << std::format("{:%Y-%m-%d}", curr_days);
+                sout << std::format("[{:" DATEFMT "}", curr_days);
 
                      if( weekday==std::chrono::Monday ) sout << " mon" "]\n";
-                else if( weekday==std::chrono::Friday ) sout <<        "]\n" "\n";
+                else if( weekday==std::chrono::Friday ) sout <<        "]\n\n";
                 else                                    sout <<        "]\n";
 
-                ++curr_days; // curr_days += std::chrono::days{1};
+                ++curr_days;
                }
            }
 
-        const std::string s = sout.str();
-        std::cout << s;
+        const auto s{ sout.str() }; // Should be move constructed
+        std::print("{}",s);
 
         sys::Clipboard clipboard;
         clipboard.set( s );
@@ -159,12 +53,15 @@ int main( int argc, const char* argv[] )
        }
     catch(std::invalid_argument& e)
        {
-        std::cerr << "!! " << e.what() << '\n';
-        Arguments::print_usage();
+        std::print("!! {}", e.what());
+        std::print( "\nUsage:\n"
+                    "   calcreate -start 2022-05-16 -weeks 30\n"
+                    "       -start <" DATEFMT ">: Sets starting day\n"
+                    "       -weeks <n>: Set how many weeks to generate\n" );
        }
     catch(std::exception& e)
        {
-        std::cerr << "!! Error: " << e.what() << '\n';
+        std::print("!! Error: {}", e.what());
        }
-    return -1;
+    return 2;
 }
