@@ -8,6 +8,7 @@ import app.arguments; // app::Arguments
 import utilities.clipboard; // sys::Clipboard
 
 #define DATEFMT "%Y-%m-%d"
+constexpr std::chrono::days operator""_d(unsigned long long d) { return std::chrono::days(d); }
 
 //---------------------------------------------------------------------------
 int main( int argc, const char* argv[] )
@@ -16,30 +17,30 @@ int main( int argc, const char* argv[] )
         app::Arguments args(argc, argv, DATEFMT);
 
         std::ostringstream sout;
-        std::chrono::sys_days curr_days(args.start_date());
+        std::chrono::sys_days curr_day(args.start_date());
         int remaining_weeks = args.weeks();
         while( remaining_weeks>0 )
            {
-            const std::chrono::weekday weekday{curr_days};
+            const std::chrono::weekday weekday{curr_day};
             if( weekday==std::chrono::Sunday )
                {
-                curr_days += std::chrono::days{1};
+                curr_day += 1_d;
                 --remaining_weeks;
                }
             else if( weekday==std::chrono::Saturday )
                {
-                curr_days += std::chrono::days{2};
+                curr_day += 2_d;
                 --remaining_weeks;
                }
             else
                {
-                sout << std::format("[{:" DATEFMT "}", curr_days);
+                sout << std::format("[{:" DATEFMT "}", curr_day);
 
                      if( weekday==std::chrono::Monday ) sout << " mon" "]\n";
-                else if( weekday==std::chrono::Friday ) sout <<        "]\n\n";
+                else if( weekday==std::chrono::Friday ) sout << " fri" "]\n\n";
                 else                                    sout <<        "]\n";
 
-                ++curr_days;
+                ++curr_day;
                }
            }
 
